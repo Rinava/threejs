@@ -22,9 +22,51 @@ scene.add(mesh)
  * Sizes
  */
 const sizes = {
-    width: 800,
-    height: 600
+    width: window.innerWidth,
+    height: window.innerHeight
 }
+
+window.addEventListener('resize', () =>
+{
+    // Update sizes
+    sizes.width = window.innerWidth
+    sizes.height = window.innerHeight
+
+    // Update camera
+    camera.aspect = sizes.width / sizes.height
+    camera.updateProjectionMatrix()
+
+    // Update renderer
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    renderer.setSize(sizes.width, sizes.height)
+})
+window.addEventListener('dblclick', () =>
+{
+    const fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement
+// in case they use safari
+    if(!fullscreenElement)
+    {
+        if(canvas.requestFullscreen)
+        {
+            canvas.requestFullscreen()
+        }
+        else if(canvas.webkitRequestFullscreen)
+        {
+            canvas.webkitRequestFullscreen()
+        }
+    }
+    else
+    {
+        if(document.exitFullscreen)
+        {
+            document.exitFullscreen()
+        }
+        else if(document.webkitExitFullscreen)
+        {
+            document.webkitExitFullscreen()
+        }
+    }
+})
 
 /**
  * Camera
