@@ -65,7 +65,7 @@ const scene = new THREE.Scene()
 const geometry = new THREE.TorusGeometry(1, 0.35, 32, 100)
 console.log(geometry.attributes.uv)
 
-const material = new THREE.MeshBasicMaterial({ map: colorTexture , transparent: true, alphaMap: alphaTexture})
+const material = new THREE.MeshBasicMaterial({ map: colorTexture })
 
 const mesh = new THREE.Mesh(geometry, material)
 scene.add(mesh)
