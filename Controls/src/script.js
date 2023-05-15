@@ -54,10 +54,30 @@ const happyFeet = 30;
 let prevTime = performance.now();
 const velocity = new THREE.Vector3();
 const direction = new THREE.Vector3();
-const color = new THREE.Color();
 
 init();
 animate();
+setInterval(changeBoxes, 100);
+const boxGeometry = new THREE.BoxGeometry(20, 20, 20).toNonIndexed();
+
+function createBox (){
+  const randomColor = new THREE.Color(Math.random() * 0xffffff);
+  const boxMaterial = new THREE.MeshBasicMaterial({
+    color: randomColor,
+  });
+
+  const box = new THREE.Mesh(boxGeometry, boxMaterial);
+  box.position.x = Math.floor(Math.random() * 30 - 10) * 20;
+  box.position.y = Math.floor(Math.random() * 20) * 20 + 10;
+  box.position.z = Math.floor(Math.random() * 25 - 10) * 20;
+
+  scene.add(box);
+  objects.push(box);
+}
+for (let i = 0; i < 1300; i++) {
+  createBox();
+}
+
 
 function init() {
   camera = new THREE.PerspectiveCamera(
@@ -71,12 +91,10 @@ function init() {
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0xffffff);
 
-  const light = new THREE.HemisphereLight(0xeeeeff, 0x777788, 0.75);
-  const ligh2 = new THREE.AmbientLight(0xFFFeee, 0.5);
+  
+  const ligh2 = new THREE.AmbientLight(0xFFFeee, 0.1);
   scene.add(ligh2);
   
-  light.position.set(0.5, 1, 0.75);
-  scene.add(light);
 
   controls = new PointerLockControls(camera, document.body);
 
@@ -215,47 +233,7 @@ floorDebug.add(floorMaterial, 'displacementScale', 0, 1);
 
   // objects
 
-  const boxGeometry = new THREE.BoxGeometry(20, 20, 20).toNonIndexed();
 
-  position = boxGeometry.attributes.position;
-  const colorsBox = [];
-
-  for (let i = 0, l = position.count; i < l; i++) {
-    color.setHSL(
-      Math.random() * 0.3 + 0.5,
-      0.75,
-      Math.random() * 0.25 + 0.75,
-      THREE.SRGBColorSpace
-    );
-    colorsBox.push(color.r, color.g, color.b);
-  }
-
-  boxGeometry.setAttribute(
-    'color',
-    new THREE.Float32BufferAttribute(colorsBox, 3)
-  );
-
-  for (let i = 0; i < 500; i++) {
-    const boxMaterial = new THREE.MeshPhongMaterial({
-      specular: 0xffffff,
-      flatShading: true,
-      vertexColors: true,
-    });
-    boxMaterial.color.setHSL(
-      Math.random() * 0.2 + 0.5,
-      0.75,
-      Math.random() * 0.25 + 0.75,
-      THREE.SRGBColorSpace
-    );
-
-    const box = new THREE.Mesh(boxGeometry, boxMaterial);
-    box.position.x = Math.floor(Math.random() * 20 - 10) * 20;
-    box.position.y = Math.floor(Math.random() * 20) * 20 + 10;
-    box.position.z = Math.floor(Math.random() * 20 - 10) * 20;
-
-    scene.add(box);
-    objects.push(box);
-  }
 
   //
 
@@ -279,6 +257,20 @@ function onWindowResize() {
 
   renderer.setSize(window.innerWidth, window.innerHeight);
 }
+function deleteRandom () {
+
+  const random = Math.floor(Math.random() * objects.length);
+  scene.remove(objects[random]);
+  objects.splice(random, 1);
+}
+
+function changeBoxes () {
+    deleteRandom();
+    createBox();
+
+}
+
+
 
 function animate() {
   requestAnimationFrame(animate);
@@ -326,6 +318,5 @@ function animate() {
   }
 
   prevTime = time;
-
   renderer.render(scene, camera);
 }
