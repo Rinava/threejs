@@ -2,10 +2,6 @@ import * as THREE from 'three';
 import * as dat from 'lil-gui';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 
-
-
-
-
 const textureLoader = new THREE.TextureLoader();
 
 const textures = {
@@ -31,13 +27,9 @@ const textures = {
 Object.keys(textures.floor).forEach((key) => {
   textures.floor[key].wrapS = THREE.RepeatWrapping;
   textures.floor[key].wrapT = THREE.RepeatWrapping;
-  textures.floor[key].repeat.set(15,15);
-
+  textures.floor[key].repeat.set(15, 15);
 });
 
-
-
-  
 let camera, scene, renderer, controls;
 
 const objects = [];
@@ -57,27 +49,106 @@ const direction = new THREE.Vector3();
 
 init();
 animate();
-setInterval(changeBoxes, 100);
+// setInterval(changeBoxes, 100);
+const axesHelper = new THREE.AxesHelper( 1000 );
+scene.add( axesHelper );
 const boxGeometry = new THREE.BoxGeometry(20, 20, 20).toNonIndexed();
 
-function createBox (){
+function createBox(position) {
   const randomColor = new THREE.Color(Math.random() * 0xffffff);
   const boxMaterial = new THREE.MeshBasicMaterial({
     color: randomColor,
   });
 
   const box = new THREE.Mesh(boxGeometry, boxMaterial);
-  box.position.x = Math.floor(Math.random() * 30 - 10) * 20;
-  box.position.y = Math.floor(Math.random() * 20) * 20 + 10;
-  box.position.z = Math.floor(Math.random() * 25 - 10) * 20;
+  box.position.copy(position);
 
   scene.add(box);
   objects.push(box);
 }
-for (let i = 0; i < 1300; i++) {
-  createBox();
+function randn_bm(min, max, skew) {
+  let u = 0, v = 0;
+  while(u === 0) u = Math.random() //Converting [0,1) to (0,1)
+  while(v === 0) v = Math.random()
+  let num = Math.sqrt( -2.0 * Math.log( u ) ) * Math.cos( 2.0 * Math.PI * v )
+  
+  num = num / 10.0 + 0.5 // Translate to 0 -> 1
+  if (num > 1 || num < 0) 
+    num = randn_bm(min, max, skew) // resample between 0 and 1 if out of range
+  
+  else{
+    num = Math.pow(num, skew) // Skew
+    num *= max - min // Stretch to fill range
+    num += min // offset to min
+  }
+  return num
 }
 
+function normalDistributionBoxes() {
+
+for (let i = 0; i < 1000; i++) {
+  const xAxis = randn_bm(-200,200,2);
+  const yAxis = randn_bm(1,1000,2);
+  const zAxis = randn_bm(-400,400,2);
+  const position = new THREE.Vector3(
+    xAxis,
+    yAxis,
+    zAxis
+  );
+  createBox(position);
+
+}}
+
+
+// normalDistributionBoxes();
+
+function rabbitDistributionBoxes() {
+  const numRows = 22; // Number of rows in the triangle
+  const rowOffset = 15; // Distance between rows
+  const boxOffset = 20; // Distance between boxes
+
+  for (let row = 0; row < numRows; row++) {
+    const numBoxesInRow = numRows - row;
+    const rowStartOffset = (-(numBoxesInRow - 1) * boxOffset) / 2;
+    console.log (rowStartOffset);
+
+    for (let i = 0; i < numBoxesInRow; i++) {
+      const xAxis = rowStartOffset + i * boxOffset;
+      const yAxis = rowOffset * row + 20 * Math.sin(xAxis / 20) + 20 * Math.cos(xAxis / 20);
+      console.log(yAxis)
+      const zAxis = 70* Math.sin(xAxis / 20) + 20 * Math.cos(yAxis / 20)
+      const position = new THREE.Vector3(
+        xAxis,
+        yAxis,
+        zAxis
+      );
+      createBox(position);
+    }
+  }
+}
+
+rabbitDistributionBoxes();
+function stairsDistributionBoxes() {
+  const numRows = 5; // Number of rows in the pyramid
+  const rowOffset = 20; // Distance between rows
+  const boxOffset = 20; // Distance between boxes
+
+  for (let row = 0; row < numRows; row++) {
+    const numBoxesInRow = numRows - row;
+    const rowStartOffset = (-(numBoxesInRow - 1) * boxOffset) / 2;
+
+    for (let i = 0; i < numBoxesInRow; i++) {
+      const position = new THREE.Vector3(
+        rowStartOffset + i * boxOffset,
+        row * rowOffset,
+        (-(numRows - 1) * boxOffset) / 2 + row * boxOffset
+      );
+      createBox(position);
+    }
+  }
+}
+
+// stairsDistributionBoxes();
 
 function init() {
   camera = new THREE.PerspectiveCamera(
@@ -91,10 +162,8 @@ function init() {
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0xffffff);
 
-  
-  const ligh2 = new THREE.AmbientLight(0xFFFeee, 0.1);
+  const ligh2 = new THREE.AmbientLight(0xfffeee, 0.1);
   scene.add(ligh2);
-  
 
   controls = new PointerLockControls(camera, document.body);
 
@@ -188,8 +257,6 @@ function init() {
   let position = floorGeometry.attributes.position;
   position = floorGeometry.attributes.position;
 
-
-
   const floorMaterial = new THREE.MeshStandardMaterial({
     roughness: 1.0,
     metalness: 0.0,
@@ -205,51 +272,32 @@ function init() {
   scene.add(floor);
 
   const cubeMap = new THREE.CubeTextureLoader()
-  .setPath('cubeMap/')
-  .load([
-    'px.png',
-    'nx.png',
-    'py.png',
-    'ny.png',
-    'pz.png',
-    'nz.png',
-  ]);
+    .setPath('cubeMap/')
+    .load(['px.png', 'nx.png', 'py.png', 'ny.png', 'pz.png', 'nz.png']);
   scene.background = cubeMap;
 
   scene.environment = cubeMap;
-// Debug
 
-const gui = new dat.GUI();
+  /**
+    Debug */
 
-const floorDebug = gui.addFolder('floor');
-floorDebug.add(floorMaterial, 'wireframe');
-floorDebug.add(floorMaterial, 'wireframeLinewidth', 0, 10);
-floorDebug.add(floorMaterial, 'metalness', 0, 1);
-floorDebug.add(floorMaterial, 'roughness', 0, 1);
-floorDebug.add(floorMaterial, 'aoMapIntensity', 0, 1);
-floorDebug.add(floorMaterial, 'displacementScale', 0, 1);
+  const gui = new dat.GUI();
 
-
-
-  // objects
-
-
-
-  //
+  const floorDebug = gui.addFolder('floor');
+  floorDebug.add(floorMaterial, 'wireframe');
+  floorDebug.add(floorMaterial, 'wireframeLinewidth', 0, 10);
+  floorDebug.add(floorMaterial, 'metalness', 0, 1);
+  floorDebug.add(floorMaterial, 'roughness', 0, 1);
+  floorDebug.add(floorMaterial, 'aoMapIntensity', 0, 1);
+  floorDebug.add(floorMaterial, 'displacementScale', 0, 1);
 
   renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
-  //
-
   window.addEventListener('resize', onWindowResize);
 }
-
-
-
-
 
 function onWindowResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
@@ -257,66 +305,63 @@ function onWindowResize() {
 
   renderer.setSize(window.innerWidth, window.innerHeight);
 }
-function deleteRandom () {
-
+function deleteRandom() {
   const random = Math.floor(Math.random() * objects.length);
   scene.remove(objects[random]);
   objects.splice(random, 1);
 }
 
-function changeBoxes () {
-    deleteRandom();
-    createBox();
-
+function changeBoxes() {
+  deleteRandom();
+  createBox();
 }
 
-
-
 function animate() {
-  requestAnimationFrame(animate);
+  renderer.setAnimationLoop(() => {
+    const time = performance.now();
 
-  const time = performance.now();
+    if (controls.isLocked) {
+      const { position } = controls.getObject();
+      raycaster.ray.origin
+        .copy(position)
+        .addScaledVector(direction, -happyFeet);
 
-  if (controls.isLocked === true) {
-    raycaster.ray.origin.copy(controls.getObject().position);
-    raycaster.ray.origin.y -= happyFeet;
+      const intersections = raycaster.intersectObjects(objects, false);
+      const onObject = intersections.length > 0;
 
-    const intersections = raycaster.intersectObjects(objects, false);
+      const delta = (time - prevTime) / 1000;
+      const deltaVelocity = delta * 2.0;
+      const deltaMove = delta * 400.0;
 
-    const onObject = intersections.length > 0;
+      velocity.x -= velocity.x * deltaVelocity;
+      velocity.z -= velocity.z * deltaVelocity;
+      velocity.y -= 9.8 * 100.0 * delta;
 
-    const delta = (time - prevTime) / 1000;
+      direction.z = Number(moveForward) - Number(moveBackward);
+      direction.x = Number(moveRight) - Number(moveLeft);
+      direction.normalize();
 
-    velocity.x -= velocity.x * 2.0 * delta;
-    velocity.z -= velocity.z * 2.0 * delta;
+      if (moveForward || moveBackward) velocity.z -= direction.z * deltaMove;
+      if (moveLeft || moveRight) velocity.x -= direction.x * deltaMove;
 
-    velocity.y -= 9.8 * 100.0 * delta; // 100.0 = mass
+      // if (onObject) {
+      //   velocity.y = Math.max(0, velocity.y);
+      //   canJump = true;
+      // }
 
-    direction.z = Number(moveForward) - Number(moveBackward);
-    direction.x = Number(moveRight) - Number(moveLeft);
-    direction.normalize(); // this ensures consistent movements in all directions
+      controls.moveRight(-velocity.x * delta);
+      controls.moveForward(-velocity.z * delta);
 
-    if (moveForward || moveBackward) velocity.z -= direction.z * 400.0 * delta;
-    if (moveLeft || moveRight) velocity.x -= direction.x * 400.0 * delta;
+      position.y += velocity.y * delta;
 
-    if (onObject === true) {
-      velocity.y = Math.max(0, velocity.y);
-      canJump = true;
+      if (position.y < happyFeet) {
+        velocity.y = 0;
+        position.y = happyFeet;
+        canJump = true;
+      }
     }
 
-    controls.moveRight(-velocity.x * delta);
-    controls.moveForward(-velocity.z * delta);
-
-    controls.getObject().position.y += velocity.y * delta; // new behavior
-
-    if (controls.getObject().position.y < happyFeet) {
-      velocity.y = 0;
-      controls.getObject().position.y = happyFeet ;
-
-      canJump = true;
-    }
-  }
-
-  prevTime = time;
-  renderer.render(scene, camera);
+    prevTime = time;
+    renderer.render(scene, camera);
+  });
 }
